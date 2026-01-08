@@ -1,30 +1,3 @@
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-# from langchain_community.vectorstores import FAISS
-# from langchain_google_genai import (
-#     GoogleGenerativeAIEmbeddings,
-#     ChatGoogleGenerativeAI
-# )
-
-# def build_rag(text):
-#     # Use RecursiveCharacterTextSplitter instead of CharacterTextSplitter
-#     splitter = RecursiveCharacterTextSplitter(
-#         chunk_size=500,
-#         chunk_overlap=50
-#     )
-#     chunks = splitter.split_text(text)
-
-#     embeddings = GoogleGenerativeAIEmbeddings(
-#         model="models/embedding-001"
-#     )
-
-#     vectorstore = FAISS.from_texts(chunks, embeddings)
-
-#     llm = ChatGoogleGenerativeAI(
-#         model="models/gemini-2.5-pro",
-#         temperature=0
-#     )
-
-#     return vectorstore, llm
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
