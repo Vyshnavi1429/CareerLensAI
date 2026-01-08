@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CareerLens AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #111827;
+  --card-light: #1f2933;
+  --text: #f9fafb;
+  --muted: #9ca3af;
+  --accent: #38bdf8;
+  --success: #22c55e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: linear-gradient(135deg, #020617, #0f172a);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 900px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 2rem;
+}
+
+.card {
+  background: var(--card-light);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #020617;
+  color: white;
+}
+
+.status {
+  font-size: .9rem;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+ul {
+  padding-left: 18px;
+}
+
+.chat {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.msg-user {
+  text-align: right;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.msg-ai {
+  margin-bottom: 10px;
+  color: var(--text);
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<h1>CareerLens AI</h1>
+<p class="status">Upload your resume → ask questions → get clarity</p>
+
+<!-- UPLOAD -->
+<div class="card">
+  <input type="file" id="fileInput" accept=".pdf" />
+  <button onclick="uploadResume()">Upload Resume</button>
+  <div id="uploadStatus" class="status"></div>
+</div>
+
+<!-- ACTION -->
+<div class="card">
+  <button id="suggestBtn" onclick="getSuggestions()" disabled>
+    Get Career Suggestions
+  </button>
+</div>
+
+<!-- SUGGESTIONS -->
+<div class="card" id="suggestions" style="display:none">
+  <h3>Suggestions</h3>
+  <strong>Improve</strong>
+  <ul id="improve"></ul>
+  <strong>Develop</strong>
+  <ul id="develop"></ul>
+  <p id="nextStep"></p>
+</div>
+
+<!-- CHAT -->
+<div class="card" id="chatCard" style="display:none">
+  <div class="chat" id="chat"></div>
+  <input id="question" placeholder="Ask something about your resume…" />
+  <button onclick="ask()">Ask</button>
+</div>
+
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let indexed = false;
+
+async function uploadResume() {
+  const file = document.getElementById("fileInput").files[0];
+  if (!file) return alert("Select PDF ra");
+
+  document.getElementById("uploadStatus").innerText = "Indexing resume…";
+
+  const fd = new FormData();
+  fd.append("file", file);
+
+  await fetch(`${API}/upload`, { method: "POST", body: fd });
+
+  indexed = true;
+  document.getElementById("uploadStatus").innerText = "Resume indexed ✅";
+  document.getElementById("suggestBtn").disabled = false;
+}
+
+async function askBackend(question) {
+  const res = await fetch(`${API}/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question })
+  });
+  return res.json();
+}
+
+async function getSuggestions() {
+  document.getElementById("suggestions").style.display = "block";
+  document.getElementById("chatCard").style.display = "block";
+
+  const improve = await askBackend(
+    "List 3 skills I should improve based on my resume"
+  );
+  const develop = await askBackend(
+    "List 3 skills I should develop next"
+  );
+  const next = await askBackend(
+    "Give one strategic next career step"
+  );
+
+  document.getElementById("improve").innerHTML =
+    improve.answer.split("\n").map(x => `<li>${x}</li>`).join("");
+
+  document.getElementById("develop").innerHTML =
+    develop.answer.split("\n").map(x => `<li>${x}</li>`).join("");
+
+  document.getElementById("nextStep").innerText = next.answer;
+}
+
+async function ask() {
+  const q = document.getElementById("question").value;
+  if (!q) return;
+
+  const chat = document.getElementById("chat");
+  chat.innerHTML += `<div class="msg-user">${q}</div>`;
+  document.getElementById("question").value = "";
+
+  const res = await askBackend(q);
+  chat.innerHTML += `<div class="msg-ai">${res.answer}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+}
+</script>
+
+</body>
+</html>
